@@ -1,0 +1,74 @@
+﻿@page "/blog"
+@using Models
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<BlogContext> CtxFactory;
+
+<PageTitle>Blog</PageTitle>
+
+<h3>Blog</h3>
+
+@foreach (var entry in blog)
+{
+    <article class="blog-entry">
+    <div class="blog-entry-content">@entry.Title </div>
+    <div class="blog-entry-content">@entry.TimePosted</div>
+    <div class="blog-entry-content">@((MarkupString)entry.Content)</div>
+    <button @onclick="()=>{RemoveEntryAsync(entry);}">DEL</button>
+</article>
+}
+
+<input type="text" placeholder="Title" @bind="title" />
+<input type="text" placeholder="Content" @bind="content" />
+<button @onclick="AddEntryAsync">Add Entry</button>
+
+
+
+@code {
+    private List<BlogEntry> blog = new List<BlogEntry>();
+
+    private string? title, content;
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var ctx = await CtxFactory.CreateDbContextAsync();
+        if (ctx.Blog != null)
+        {
+            blog.AddRange(await ctx.Blog.OrderByDescending(be => be.TimePosted).ToListAsync());
+        }
+    }
+
+
+    private async void RemoveEntryAsync(BlogEntry entry)
+    {
+        using var ctx = await CtxFactory.CreateDbContextAsync();
+        if (ctx.Blog != null)
+        {
+            ctx.Blog.Remove(entry);
+        }
+        blog.Remove(entry);
+        await ctx.SaveChangesAsync();
+    }
+
+
+    private async void AddEntryAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(title) && !string.IsNullOrWhiteSpace(content))
+        {
+            var be = new BlogEntry { Title = title, Content = content, TimePosted = DateTime.Now };
+
+            using var ctx = await CtxFactory.CreateDbContextAsync();
+            if (ctx.Blog != null)
+            {
+                await ctx.Blog.AddAsync(be);
+                if (await ctx.SaveChangesAsync() > 0)
+                {
+                    blog.Add(be);
+
+                    blog.Sort();
+                    title = "";
+                    content = string.Empty;
+                }
+            }
+        }
+    }
+}

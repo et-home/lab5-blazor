@@ -1,0 +1,11 @@
+.blog-entry{
+    border:2px rgb(103, 49, 154);
+    background-color: rgba(103, 49, 154, .3);
+    border-radius: 5px;
+    margin: 10px;
+    padding: 5px;
+}
+
+.blog-entry-content{
+    margin:10px;
+}
